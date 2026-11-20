@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from app.database.db import create_db_and_tables, engine
 from app.database.models import (
     Address, Assignment, Client, DeliveryOrder, DeliveryRoute, DeliveryService,
-    Employee, Payment, Role, RouteStop, StatusHistory, User, Vehicle,
+    Employee, Parcel, Payment, Review, Role, RouteStop, StatusHistory, User, Vehicle,
 )
 from app.security import hash_password
 
@@ -78,6 +78,7 @@ def seed() -> None:
             "closed": ["confirmed", "assigned", "in_transit", "delivered", "paid", "closed"],
         }
         statuses = list(status_paths)
+        reviews_added = 0
         for i in range(30):
             sender_index = i % 20
             recipient_index = (i + 7) % 20
@@ -110,6 +111,23 @@ def seed() -> None:
                 session.add(Payment(order_id=order.id, amount=order.total_price, method="card", status="paid", paid_at=created + timedelta(hours=3)))
             if courier and i % 3:
                 session.add(RouteStop(route_id=routes[i % 5].id, order_id=order.id, sequence=i // 5 + 1))
+            if i < 4:
+                session.add(Parcel(
+                    order_id=order.id,
+                    description=f"Демо-посылка №{i+1}",
+                    weight_kg=order.weight_kg,
+                    length_cm=30,
+                    width_cm=20,
+                    height_cm=10,
+                ))
+            if status in {"delivered", "paid", "closed"} and reviews_added < 4:
+                session.add(Review(
+                    order_id=order.id,
+                    client_id=clients[sender_index].id,
+                    rating=3 + reviews_added % 3,
+                    comment="Демонстрационный отзыв",
+                ))
+                reviews_added += 1
             session.commit()
         print("Seeded 20 clients, 10 services, 5 couriers, 5 vehicles and 30 delivery orders.")
         print("Demo login: admin / Admin123! (also manager / Manager123!, courier1 / Courier1!).")
