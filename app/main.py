@@ -22,5 +22,12 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", tags=["system"], summary="Проверить доступность API")
+def root():
+    return {"message": "API службы доставки работает", "docs": "/docs"}
+
+
 app.include_router(auth_router)
 app.include_router(delivery_router)
